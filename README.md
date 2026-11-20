@@ -41,7 +41,8 @@ cc -O2 -Wall -o memguardd memguardd.c
 - 12GiB 稳态大进程不误杀(大而稳 ≠ 膨胀)。
 - 55 分钟连续运行 55 次扫描,无误报。
 
-## 局限(诚实账)
+## 已知交互
 
-- 粒度 = 扫描间隔:增长路径最坏 ~`2×sweep` 才出手;硬顶路径最坏 ~1 个 sweep。
+- 紧急规则杀「当前 RSS 最大的非保护进程」——并行编译风暴里那就是你的 rustc(实测:32GiB 机器上 all-targets 测试编译+两路并行构建把 MemAvailable 压到 ~700MiB,守卫连杀两个 2.4GiB 的 rustc 保盒)。这是设计行为:盒子存活优先于任何单个作业;要避免,错峰编译或调高 `-e`。
+- cgroup memcg OOM(user slice)杀进程不留内核日志,只在 `memory.events` 的 `oom_kill` 计数;归因时先查那里。
 - 判据纯 RSS/增长,不看 OOM score——被保护进程自己泄漏不在此守护范围。
